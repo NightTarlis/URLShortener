@@ -17,6 +17,7 @@ def redirect_to_basicUrl(request, short_url):
     else:
         link.links_count += 1
         link.save()
+        request.session.set_test_cookie()
         return redirect(link.links_http)
 
 
