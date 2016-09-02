@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block title %}URL Shortener{% endblock %}
+{% block logout  %}
+    <div class="col-sx-6 col-md-offset-10">
+        {% if user %}
+            <h4><a href="/auth/logout/">Logout ({{ user }})</a></h4>
+        {% endif %}
+    </div>
+{% endblock %}
+{% block content %}
+    </br></br></br></br></br></br>
+    <form action="/" method="post" class="col-md-8 col-md-offset-2">
+        {% csrf_token %}
+        <label for="url" class="sr-only">URL</label>
+        <input type="text" name="url" id="url" class="form-control"
+            placeholder="Past here your http or https URL" required
+            {% if not url %}
+               autofocus
+            {% else %}
+                value="{{ url }}"
+            {% endif %}
+        >
+        {% if link %}
+            <input type="text" name="url" id="url" class="form-control" value="{{ link }}" readonly autofocus>
+        {% endif %}
+        {% if error %}
+            <label class="errors">{{ error }}</label>
+        {% endif %}
+        <input class="button btn-lg btn-primary btn-block" type="submit" value="Submit">
+    </form>
+{% endblock %}

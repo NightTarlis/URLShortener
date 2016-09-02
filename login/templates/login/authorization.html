@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+
+{% block title %} Authorization {% endblock %}
+
+{% block content %}
+    <div class="col-xs-6 col-md-offset-3" xmlns="http://www.w3.org/1999/html">
+        <form action="/auth/login/" method="post">
+            {% csrf_token %}
+            </br></br></br></br></br>
+            <label for="username"class="sr-only">Login</label>
+            <input type="text" name="username" class="form-control" placeholder="Username" required autofocus>
+            <label for="password" class="sr-only">Password</label>
+            <input type="password" name="password" class="form-control" placeholder="Password" required>
+            {% if login_error %}
+                <label class="errors">{{ login_error }}</label>
+            {% endif %}
+            <input class="button btn-lg btn-primary btn-block" type="submit" value="Sign in">
+        </form>
+    </div>
+{% endblock %}
