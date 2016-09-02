@@ -1,5 +1,5 @@
 django1.10
 python3.4.3
 
-alice
-_combo123
+login: alice
+pass: _combo123
