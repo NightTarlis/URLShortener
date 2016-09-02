@@ -13,9 +13,12 @@ BASE = len(ALPHABET)
 
 def redirect_to_basicUrl(request, short_url):
     link = get_object_or_404(Links, pk=short_url)
-    link.links_count += 1
-    link.save()
-    return redirect(link.links_http)
+    if Session.objects.exists():
+        return redirect(link.links_http)
+    else:
+        link.links_count += 1
+        link.save()
+        return redirect(link.links_http)
 
 
 def service(request):
