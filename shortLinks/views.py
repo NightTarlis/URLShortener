@@ -1,6 +1,5 @@
 from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
-from django.http import HttpResponse
 from django.shortcuts import render_to_response, redirect, get_object_or_404
 from django.template.context_processors import csrf
 from shortLinks.models import Links
@@ -13,7 +12,7 @@ BASE = len(ALPHABET)
 
 def redirect_to_basicUrl(request, short_url):
     link = get_object_or_404(Links, pk=short_url)
-    if Session.objects.exists():
+    if request.COOKIES:
         return redirect(link.links_http)
     else:
         link.links_count += 1
