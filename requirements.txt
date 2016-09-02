@@ -1,5 +1,7 @@
 django1.10
 python3.4.3
+linux 3.16.0-77 x86_64
+SQLite
 
 login: alice
 pass: _combo123
