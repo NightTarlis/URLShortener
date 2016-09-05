@@ -17,7 +17,7 @@ BASE = len(ALPHABET)
 
 
 def redirect_to_basicUrl(request, short_url):
-    link = get_object_or_404(Link, pk=short_url)
+    link = get_object_or_404(Link, short=short_url)
     if request.COOKIES:
         return redirect(link.full)
     else:
