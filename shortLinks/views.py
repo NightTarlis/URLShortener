@@ -1,49 +1,60 @@
-from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
+from django.core.exceptions import ValidationError
+from django.core.validators import URLValidator
 from django.shortcuts import render_to_response, redirect, get_object_or_404
 from django.template.context_processors import csrf
-from shortLinks.models import Links
+from django.contrib.auth.decorators import login_required
 from django.contrib import auth
+
+from datetime import datetime
+
+from shortLinks.models import Link
 import hashlib
-import re
+
 
 ALPHABET = '23456789bcdfghjkmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ'
 BASE = len(ALPHABET)
 
+
 def redirect_to_basicUrl(request, short_url):
-    link = get_object_or_404(Links, pk=short_url)
+    link = get_object_or_404(Link, pk=short_url)
     if request.COOKIES:
-        return redirect(link.links_http)
+        return redirect(link.full)
     else:
-        link.links_count += 1
+        link.count += 1
         link.save()
-        request.session.set_test_cookie()
-        return redirect(link.links_http)
+        return redirect(link.full)
 
 
+@login_required(login_url='/auth/login/')
 def service(request):
-    args = {}
-    args.update(csrf(request))
-    args['user'] = auth.get_user(request)
-    if args['user'].is_anonymous:
-        return redirect('/auth/login/')
-    else:
-        if request.POST:
-            args['url'] = request.POST.get('url', None)
-            if re.match(r'(https:\/\/(\w+\.)?\w+\.\w{2,3}|http:\/\/(\w+\.)?\w+\.\w{2,3})', args['url']):
-                args['short_url'] = (hashlib.md5(args['url'].encode())).hexdigest()
-                args['short_url'] = int(args['short_url'], 16)
-                args['short_url'] = encode(args['short_url'])[:6]
-                args['username'] = str(args['user'])
-                link = Links(links_http=args['url'], links_short=args['short_url'], links_login=args['username'])
-                link.save()
-                args['link'] = str(get_current_site(request)) + '/' + args['short_url']
-                return render_to_response('shortLinks/service.html', args)
+    context = {}
+    context.update(csrf(request))
+    context['user'] = auth.get_user(request)
+    if request.POST:
+        context['url'] = request.POST.get('url', None)
+        validate = URLValidator()
+        try:
+            validate(context['url'])
+            context['short_url'] = str(datetime.now(tz=None)) + str(context['user'])
+            context['short_url'] = (hashlib.md5(context['short_url'].encode())).hexdigest()
+            context['short_url'] = int(context['short_url'], 16)
+            context['short_url'] = encode(context['short_url'])[:6]
+            context['username'] = str(context['user'])
+            if Link.objects.filter(short=context['short_url']).count() > 0:
+                context['error'] = "Try again"
+                return render_to_response('shortLinks/service.html', context)
             else:
-                args['error'] = "It's not HTTP or HTTPS"
-                return render_to_response('shortLinks/service.html', args)
-        else:
-            return render_to_response('shortLinks/service.html', args)
+                link = Link(full=context['url'], short=context['short_url'], login=context['username'])
+                link.save()
+                context['link'] = str(get_current_site(request)) + '/' + context['short_url']
+                return render_to_response('shortLinks/service.html', context)
+        except ValidationError:
+            context['error'] = "It's not URL"
+            return render_to_response('shortLinks/service.html', context)
+    else:
+        return render_to_response('shortLinks/service.html', context)
+
 
 def encode(number):
     string = ''
