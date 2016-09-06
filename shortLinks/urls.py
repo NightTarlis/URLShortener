@@ -18,5 +18,5 @@ from shortLinks import views
 
 urlpatterns = [
     url(r'^$', views.service, name='service'),
-    url(r'^(?P<short_url>\w{6})$', views.redirect_to_basicUrl, name='redirecttobasic'),
+    url(r'^(?P<short_url>\w{6})$', views.redirect_to_basic_url, name='redirecttobasic'),
 ]
