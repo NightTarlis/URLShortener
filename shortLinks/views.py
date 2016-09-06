@@ -26,12 +26,11 @@ def redirect_to_basic_url(request, short_url):
     else:
         context = {'short_cookie': str(request.COOKIES.get('short_url'))}
         context['short_cookie'] += ' | ' + str(short_url)
-        response = render(request, 'shortLinks/service.html', context)
+        response = redirect(link.full)
         response.set_cookie('short_url', context['short_cookie'])
         link.count += 1
         link.save()
         return response
-
 
 @login_required(login_url='/auth/login/')
 def service(request):
