@@ -2,9 +2,7 @@ from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
-from django.http import HttpResponse, response
-from django.shortcuts import render_to_response, redirect, get_object_or_404, render
-from django.template import RequestContext
+from django.shortcuts import render_to_response, redirect, get_object_or_404
 from django.template.context_processors import csrf
 from django.contrib.auth.decorators import login_required
 from django.contrib import auth
