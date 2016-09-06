@@ -1,7 +1,5 @@
 from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
-from django.core.exceptions import ValidationError
-from django.core.validators import URLValidator
 from django.shortcuts import render_to_response, redirect, get_object_or_404
 from django.template.context_processors import csrf
 from django.contrib.auth.decorators import login_required
@@ -11,6 +9,7 @@ from datetime import datetime
 
 from shortLinks.models import Link
 import hashlib
+import re
 
 
 ALPHABET = '23456789bcdfghjkmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ'
@@ -37,8 +36,8 @@ def service(request):
     context_dict['user'] = auth.get_user(request)
     if request.POST:
         context_dict['url'] = request.POST.get('url', None)
-        try:
-            URLValidator(context_dict['url'])
+        # try: URLValidator() except ValidationError: #dont work
+        if re.match(r'(http|https)://(\w+\.)?\w+\.\w{2,3}', context_dict['url']):
             context_dict['short_url'] = str(datetime.now(tz=None)) + str(context_dict['user'])
             context_dict['short_url'] = (hashlib.md5(context_dict['short_url'].encode())).hexdigest()
             context_dict['short_url'] = int(context_dict['short_url'], 16)
@@ -55,8 +54,8 @@ def service(request):
                 link.save()
                 context_dict['link'] = str(get_current_site(request)) + '/' + context_dict['short_url']
                 return render_to_response('shortLinks/service.html', context_dict)
-        except ValidationError:
-            context_dict['error'] = "It's not URL"
+        else:
+            context_dict['error'] = 'It\'s not http or https'
             return render_to_response('shortLinks/service.html', context_dict)
     else:
         return render_to_response('shortLinks/service.html', context_dict)
