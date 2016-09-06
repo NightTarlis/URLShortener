@@ -1,7 +1,10 @@
+from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
-from django.shortcuts import render_to_response, redirect, get_object_or_404
+from django.http import HttpResponse, response
+from django.shortcuts import render_to_response, redirect, get_object_or_404, render
+from django.template import RequestContext
 from django.template.context_processors import csrf
 from django.contrib.auth.decorators import login_required
 from django.contrib import auth
@@ -16,44 +19,50 @@ ALPHABET = '23456789bcdfghjkmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ'
 BASE = len(ALPHABET)
 
 
-def redirect_to_basicUrl(request, short_url):
+def redirect_to_basic_url(request, short_url):
     link = get_object_or_404(Link, short=short_url)
-    if request.COOKIES:
+    if str(short_url) in str(request.COOKIES.get('short_url')):
         return redirect(link.full)
     else:
+        context = {'short_cookie': str(request.COOKIES.get('short_url'))}
+        context['short_cookie'] += ' | ' + str(short_url)
+        response = render(request, 'shortLinks/service.html', context)
+        response.set_cookie('short_url', context['short_cookie'])
         link.count += 1
         link.save()
-        return redirect(link.full)
+        return response
 
 
 @login_required(login_url='/auth/login/')
 def service(request):
-    context = {}
-    context.update(csrf(request))
-    context['user'] = auth.get_user(request)
+    context_dict = {}
+    context_dict.update(csrf(request))
+    context_dict['user'] = auth.get_user(request)
     if request.POST:
-        context['url'] = request.POST.get('url', None)
-        validate = URLValidator()
+        context_dict['url'] = request.POST.get('url', None)
         try:
-            validate(context['url'])
-            context['short_url'] = str(datetime.now(tz=None)) + str(context['user'])
-            context['short_url'] = (hashlib.md5(context['short_url'].encode())).hexdigest()
-            context['short_url'] = int(context['short_url'], 16)
-            context['short_url'] = encode(context['short_url'])[:6]
-            context['username'] = str(context['user'])
-            if Link.objects.filter(short=context['short_url']).count() > 0:
-                context['error'] = "Try again"
-                return render_to_response('shortLinks/service.html', context)
+            URLValidator(context_dict['url'])
+            context_dict['short_url'] = str(datetime.now(tz=None)) + str(context_dict['user'])
+            context_dict['short_url'] = (hashlib.md5(context_dict['short_url'].encode())).hexdigest()
+            context_dict['short_url'] = int(context_dict['short_url'], 16)
+            context_dict['short_url'] = encode(context_dict['short_url'])[:6]
+            context_dict['username'] = str(context_dict['user'])
+            if Link.objects.filter(short=context_dict['short_url']).count() > 0:
+                context_dict['error'] = "Try again"
+                return render_to_response('shortLinks/service.html', context_dict)
             else:
-                link = Link(full=context['url'], short=context['short_url'], login=context['username'])
+                link = Link(full=context_dict['url'],
+                            short=context_dict['short_url'],
+                            login_id=User.objects.get(username=context_dict['username']).id)
+
                 link.save()
-                context['link'] = str(get_current_site(request)) + '/' + context['short_url']
-                return render_to_response('shortLinks/service.html', context)
+                context_dict['link'] = str(get_current_site(request)) + '/' + context_dict['short_url']
+                return render_to_response('shortLinks/service.html', context_dict)
         except ValidationError:
-            context['error'] = "It's not URL"
-            return render_to_response('shortLinks/service.html', context)
+            context_dict['error'] = "It's not URL"
+            return render_to_response('shortLinks/service.html', context_dict)
     else:
-        return render_to_response('shortLinks/service.html', context)
+        return render_to_response('shortLinks/service.html', context_dict)
 
 
 def encode(number):
