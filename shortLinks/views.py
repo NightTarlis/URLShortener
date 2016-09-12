@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
+from django.core.validators import URLValidator
 from django.shortcuts import render_to_response, redirect, get_object_or_404
 from django.template.context_processors import csrf
 from django.contrib.auth.decorators import login_required
@@ -29,6 +30,7 @@ def redirect_to_basic_url(request, short_url):
         link.save()
         return response
 
+
 @login_required(login_url='/auth/login/')
 def service(request):
     context_dict = {}
@@ -39,8 +41,8 @@ def service(request):
         # try: URLValidator() except ValidationError: #dont work
         if re.match(r'(http|https)://(\w+\.)?\w+\.\w{2,3}', context_dict['url']):
             context_dict['short_url'] = str(datetime.now(tz=None)) + str(context_dict['user'])
-            context_dict['short_url'] = (hashlib.md5(context_dict['short_url'].encode())).hexdigest()
-            context_dict['short_url'] = int(context_dict['short_url'], 16)
+            context_dict['short_url'] = hashlib.md5(context_dict['short_url'].encode())
+            context_dict['short_url'] = int(context_dict['short_url'].hexdigest(), 16)
             context_dict['short_url'] = encode(context_dict['short_url'])[:6]
             context_dict['username'] = str(context_dict['user'])
             if Link.objects.filter(short=context_dict['short_url']).count() > 0:
